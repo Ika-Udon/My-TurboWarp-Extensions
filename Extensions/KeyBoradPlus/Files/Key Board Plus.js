@@ -1,8 +1,6 @@
 // Name: Key Press Checker
 // ID: keyPressChecker
 // Description: Check if a specific key is pressed, or when it's pressed/released.
-// By: Gemini
-// License: MIT
 
 (function (Scratch) {
   "use strict";
@@ -146,3 +144,4 @@
 
   Scratch.extensions.register(new KeyPressChecker());
 })(Scratch);
+
