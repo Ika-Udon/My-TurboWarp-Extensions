@@ -65,7 +65,7 @@
     getInfo() {
       return {
         id: "keyPressChecker",
-        name: Scratch.translate("キーチェック"),
+        name: "KeyBoardPlus",
         color1: "#81d1f9", color2: "#4088CC", color3: "#306899",
         blocks: [
           {
@@ -144,4 +144,5 @@
 
   Scratch.extensions.register(new KeyPressChecker());
 })(Scratch);
+
 
