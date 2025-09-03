@@ -27,11 +27,11 @@ Unlike **anima text**, this extension is **not** animation‑focused.
   - Apply styles to only part of the text
   - Example:
     ```text
-    Hello <color="#ff0000">red text</color>
-    <font="Serif">Serif font</font>
-    <f_size=40>Large text</f_size>
-    <alpha=50>Semi‑transparent</alpha>
-    <edge c="#0000ff" t=2>Blue outline</edge>
+    Hello <color="#ff0000">red text
+    <font="Serif">Serif font
+    <f_size=40>Large text
+    <alpha=50>Semi‑transparent
+    <edge c="#0000ff" t=2>Blue outline
     ```
 - **Information Retrieval**
   - Get current font, size, color, opacity, alignment, outline settings, vertical writing state, resolution, text content, etc.
