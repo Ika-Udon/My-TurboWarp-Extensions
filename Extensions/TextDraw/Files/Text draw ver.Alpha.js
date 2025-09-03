@@ -458,11 +458,12 @@
         this._rotationCenter[1] = this.fontSize * 0.9 + padV + this.outlineWidth;
       } else {
         const totalWidth = Math.max(1, ...lines.map(l => l.width)) + this.outlineWidth * 2;
-        // 行間（改行幅）を加算：行数が n のとき間は n-1 個
+        // 寄せに応じて空白を追加するため、実際の描画幅を2倍に
+        const paddedWidth = totalWidth * 2;
         const totalHeight = (lines.length * lh) + Math.max(0, lines.length - 1) * this.lineBreakWidth + padV * 2 + this.outlineWidth * 2;
 
         this.lines = lines;
-        this._size[0] = Math.max(totalWidth, 1);
+        this._size[0] = Math.max(paddedWidth, 1);
         this._size[1] = Math.max(totalHeight, 1);
         this._rotationCenter[0] = this._size[0] / 2;
         this._rotationCenter[1] = this.fontSize * 0.9 + padV + this.outlineWidth;
@@ -486,6 +487,16 @@
       this.ctx.imageSmoothingEnabled = this.antialias;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+      // 寄せに応じてオフセットを計算
+      let baseOffset = 0;
+      if (this.align === ALIGN_LEFT) {
+        baseOffset = this._size[0] / 4; // 左寄せは1/4位置から描画開始
+      } else if (this.align === ALIGN_RIGHT) {
+        baseOffset = (this._size[0] * 3) / 4; // 右寄せは3/4位置から描画開始
+      } else {
+        baseOffset = this._size[0] / 2; // 中央寄せは中央から描画開始
+      }
+
       this.ctx.font = this._getFontStyle();
       this.ctx.textBaseline = "alphabetic";
       this.ctx.globalAlpha = this.alpha / 100;
@@ -499,9 +510,20 @@
         const lineWidth = lineObj.width;
 
         if (!this.vertical) {
-          let x = this.outlineWidth;
-          if (this.align === ALIGN_CENTER) x += (this._size[0] - this.outlineWidth * 2 - lineWidth) / 2;
-          else if (this.align === ALIGN_RIGHT) x += (this._size[0] - this.outlineWidth * 2 - lineWidth);
+          // 各行ごとにアライメントを適用
+          // 変更: 左寄せは「右端を中央に合わせる」、右寄せは「左端を中央に合わせる」
+          const centerX = this._size[0] / 2;
+          let x;
+          if (this.align === ALIGN_LEFT) {
+            // 左ブロックは中央線にくっつくように右端を中央に合わせる
+            x = centerX - lineWidth - this.outlineWidth;
+          } else if (this.align === ALIGN_RIGHT) {
+            // 右ブロックは中央線にくっつくように左端を中央に合わせる
+            x = centerX + this.outlineWidth;
+          } else {
+            // 中央寄せは従来通り中央に揃える
+            x = (this._size[0] - lineWidth) / 2;
+          }
           const y = padV + i * (lh + this.lineBreakWidth) + this.fontSize + this.outlineWidth;
 
           let cx = x;
@@ -524,16 +546,26 @@
             }
           }
         } else {
-          // 縦書き時：元の実装に戻す（ユーザ要望）
+          // 縦書きの場合も各列ごとにアライメントを適用
           const columnWidth = this.fontSize + this.outlineWidth * 2;
           const numCols = Math.max(1, this.lines.length);
           const columnGap = this.lineBreakWidth;
           const padH = this.outlineWidth;
           let colLeft;
-          if (this.vertical === "left") {
-            colLeft = padH + (numCols - 1 - i) * (columnWidth + columnGap);
+          if (this.align === ALIGN_LEFT) {
+            colLeft = padH + (this.vertical === "left"
+              ? (numCols - 1 - i) * (columnWidth + columnGap)
+              : i * (columnWidth + columnGap));
+          } else if (this.align === ALIGN_RIGHT) {
+            colLeft = this._size[0] - columnWidth - padH - (this.vertical === "left"
+              ? (numCols - 1 - i) * (columnWidth + columnGap)
+              : i * (columnWidth + columnGap));
           } else {
-            colLeft = padH + i * (columnWidth + columnGap);
+            // 中央
+            colLeft = (this._size[0] - numCols * columnWidth - Math.max(0, numCols - 1) * columnGap) / 2
+              + (this.vertical === "left"
+                ? (numCols - 1 - i) * (columnWidth + columnGap)
+                : i * (columnWidth + columnGap));
           }
 
           const yStart = padV + this.outlineWidth + this.fontSize;
