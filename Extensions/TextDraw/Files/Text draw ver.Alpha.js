@@ -1109,10 +1109,10 @@
       state.skin.setResolution(Scratch.Cast.toNumber(R));
     }
 
-    setAntiAlias({ ON }, util) {
-      const state = this._getState(util.target);
-      state.skin.setAntialias(!!ON);
-    }
+setAntiAlias({ ON }, util) {
+    const state = this._getState(util.target);
+    state.skin.setAntialias(ON === "true");
+}
 
     setWrapChars({ N }, util) {
       const state = this._getState(util.target);
