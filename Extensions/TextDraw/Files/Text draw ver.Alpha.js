@@ -815,177 +815,172 @@
     }
 
     getInfo() {
-      return {
-        id: "twtextplus",
-        name: "テキスト拡張(軽量)",
-        color1: "#9966FF",
-        blocks: [
-          {
-            opcode: "showText",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "テキストを表示 [TEXT]",
-            arguments: {
-              TEXT: { type: Scratch.ArgumentType.STRING, defaultValue: "こんにちは <color=\"#ff0000\">赤</n><font=\"Serif\">フォント" }
-            },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "restoreCostume",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "もとのコスチュームに戻す",
-            extensions: ["colours_looks"]
-          },
-          "---",
-          {
-            opcode: "setFont",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "フォントを [FONT] にする",
-            arguments: {
-              FONT: { type: Scratch.ArgumentType.STRING, menu: "font" }
-            },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setFontSize",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "文字サイズを [SIZE] にする",
-            arguments: { SIZE: { type: Scratch.ArgumentType.NUMBER, defaultValue: DEFAULT_FONT_SIZE } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setColor",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "文字の色を [COLOR] にする",
-            arguments: { COLOR: { type: Scratch.ArgumentType.COLOR } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setAlpha",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "透明度を [ALPHA]% にする",
-            arguments: { ALPHA: { type: Scratch.ArgumentType.NUMBER, defaultValue: 100 } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setSpacing",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "文字間隔を [SPACE] にする",
-            arguments: { SPACE: { type: Scratch.ArgumentType.NUMBER, defaultValue: 0 } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setLineBreakWidth",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "改行幅を [N] にする",
-            arguments: { N: { type: Scratch.ArgumentType.NUMBER, defaultValue: DEFAULT_LINE_BREAK_WIDTH } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setAlign",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "寄せを [ALIGN] にする",
-            arguments: { ALIGN: { type: Scratch.ArgumentType.STRING, menu: "align" } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setThickness",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "太さを [N] にする",
-            arguments: { N: { type: Scratch.ArgumentType.NUMBER, defaultValue: 1 } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setEdgeColor",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "縁の色を [COLOR] にする",
-            arguments: { COLOR: { type: Scratch.ArgumentType.COLOR } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setEdgeWidth",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "縁の太さを [W] にする",
-            arguments: { W: { type: Scratch.ArgumentType.NUMBER, defaultValue: 0 } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setVertical",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "縦書きを [ON] にする",
-            arguments: { ON: { type: Scratch.ArgumentType.STRING, menu: "verticalMenu" } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setResolution",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "解像度を [R] にする",
-            arguments: { R: { type: Scratch.ArgumentType.NUMBER, defaultValue: 1 } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setAntiAlias",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "アンチエイリアスを [ON] にする",
-            arguments: { ON: { type: Scratch.ArgumentType.BOOLEAN, defaultValue: true } },
-            extensions: ["colours_looks"]
-          },
-          {
-            opcode: "setWrapChars",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "改行までの文字数を [N] にする (0は無効)",
-            arguments: { N: { type: Scratch.ArgumentType.NUMBER, defaultValue: 0 } },
-            extensions: ["colours_looks"]
-          },
-          "---",
-          {
-            opcode: "setWidth",
-            blockType: Scratch.BlockType.COMMAND,
-            text: "幅を [W] にする",
-            arguments: { W: { type: Scratch.ArgumentType.NUMBER, defaultValue: 200 } },
-            extensions: ["colours_looks"]
-          },
-          "---",
-          {
-            opcode: "getAttr",
-            blockType: Scratch.BlockType.REPORTER,
-            text: "テキスト情報 [KEY]",
-            arguments: {
-              KEY: { type: Scratch.ArgumentType.STRING, menu: "attribute" }
-            },
-            disableMonitor: true,
-            extensions: ["colours_looks"]
-          }
-        ],
-        menus: {
-          font: {
-            acceptReporters: true,
-            items: "getFonts"
-          },
-          align: {
-            acceptReporters: false,
-            items: [
-              { text: "左", value: "left" },
-              { text: "中央", value: "center" },
-              { text: "右", value: "right" }
-            ]
-          },
-          verticalMenu: {
-            acceptReporters: false,
-            items: [
-              { text: "横書き (false)", value: "false" },
-              { text: "縦書き — 改行で左に追加 (left)", value: "left" },
-              { text: "縦書き — 改行で右に追加 (right)", value: "right" }
-            ]
-          },
-          attribute: {
-            acceptReporters: false,
-            items: [
-              "font","size","color","alpha","spacing","align","thickness","edge color","edge width","vertical","resolution","antialias","width","text"
-            ]
-          }
-        }
-      };
+  return {
+    id: "twtextplus",
+    name: "テキスト拡張(軽量)",
+    color1: "#e2284dff",
+    blocks: [
+      {
+        opcode: "showText",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "テキストを表示 [TEXT]",
+        arguments: {
+          TEXT: { type: Scratch.ArgumentType.STRING, defaultValue: "こんにちは <color=\"#ff0000\">赤</n><font=\"Serif\">フォント" }
+        },
+      },
+      {
+        opcode: "restoreCostume",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "もとのコスチュームに戻す",
+      },
+      "---",
+      {
+        opcode: "setFont",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "フォントを [FONT] にする",
+        arguments: {
+          FONT: { type: Scratch.ArgumentType.STRING, menu: "font" }
+        },
+      },
+      {
+        opcode: "setFontSize",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "文字サイズを [SIZE] にする",
+        arguments: { SIZE: { type: Scratch.ArgumentType.NUMBER, defaultValue: DEFAULT_FONT_SIZE } },
+      },
+      {
+        opcode: "setColor",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "文字の色を [COLOR] にする",
+        arguments: { COLOR: { type: Scratch.ArgumentType.COLOR } },
+      },
+      {
+        opcode: "setAlpha",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "透明度を [ALPHA]% にする",
+        arguments: { ALPHA: { type: Scratch.ArgumentType.NUMBER, defaultValue: 100 } },
+      },
+      {
+        opcode: "setSpacing",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "文字間隔を [SPACE] にする",
+        arguments: { SPACE: { type: Scratch.ArgumentType.NUMBER, defaultValue: 0 } },
+      },
+      {
+        opcode: "setLineBreakWidth",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "改行幅を [N] にする",
+        arguments: { N: { type: Scratch.ArgumentType.NUMBER, defaultValue: DEFAULT_LINE_BREAK_WIDTH } },
+      },
+      {
+        opcode: "setAlign",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "寄せを [ALIGN] にする",
+        arguments: {
+          ALIGN: { type: Scratch.ArgumentType.STRING, menu: "align" }
+        },
+      },
+      {
+        opcode: "setThickness",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "太さを [N] にする",
+        arguments: { N: { type: Scratch.ArgumentType.NUMBER, defaultValue: 1 } },
+      },
+      {
+        opcode: "setEdgeColor",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "縁の色を [COLOR] にする",
+        arguments: { COLOR: { type: Scratch.ArgumentType.COLOR } },
+      },
+      {
+        opcode: "setEdgeWidth",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "縁の太さを [W] にする",
+        arguments: { W: { type: Scratch.ArgumentType.NUMBER, defaultValue: 0 } },
+      },
+      {
+        opcode: "setVertical",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "縦書きを [ON] にする",
+        arguments: {
+          ON: { type: Scratch.ArgumentType.STRING, menu: "verticalMenu" }
+        },
+      },
+      {
+        opcode: "setResolution",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "解像度を [R] にする",
+        arguments: { R: { type: Scratch.ArgumentType.NUMBER, defaultValue: 1 } },
+      },
+      {
+        opcode: "setAntiAlias",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "アンチエイリアスを [ON] にする",
+        arguments: {
+          ON: { type: Scratch.ArgumentType.STRING, menu: "onOffMenu" }
+        },
+      },
+      {
+        opcode: "setWrapChars",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "改行までの文字数を [N] にする (0は無効)",
+        arguments: { N: { type: Scratch.ArgumentType.NUMBER, defaultValue: 0 } },
+      },
+      "---",
+      {
+        opcode: "setWidth",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "幅を [W] にする",
+        arguments: { W: { type: Scratch.ArgumentType.NUMBER, defaultValue: 200 } },
+      },
+      "---",
+      {
+        opcode: "getAttr",
+        blockType: Scratch.BlockType.REPORTER,
+        text: "テキスト情報 [KEY]",
+        arguments: {
+          KEY: { type: Scratch.ArgumentType.STRING, menu: "attribute" }
+        },
+        disableMonitor: true,
+      }
+    ],
+    menus: {
+      font: {
+        acceptReporters: true,
+        items: "getFonts"
+      },
+      align: {
+        acceptReporters: true,
+        items: [
+          { text: "左", value: "left" },
+          { text: "中央", value: "center" },
+          { text: "右", value: "right" }
+        ]
+      },
+      verticalMenu: {
+        acceptReporters: true,
+        items: [
+          { text: "横書き", value: "false" },
+          { text: "縦書き — 改行で左に追加", value: "left" },
+          { text: "縦書き — 改行で右に追加", value: "right" }
+        ]
+      },
+      onOffMenu: {
+        acceptReporters: true,
+        items: [
+          { text: "オン", value: "true" },
+          { text: "オフ", value: "false" }
+        ]
+      },
+      attribute: {
+        acceptReporters: true,
+        items: [
+          "font", "size", "color", "alpha", "spacing", "align", "thickness", "edge color", "edge width", "vertical", "resolution", "antialias", "width", "text"
+        ]
+      }
     }
+  };
+}
 
     getFonts() {
       const customFonts = Scratch.vm.runtime.fontManager
