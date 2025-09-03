@@ -75,4 +75,4 @@ anima textとは違い、アニメーション特化ではありません。
 1. TurboWarpなどからカスタム拡張として読み込み
 2. プロジェクト内でブロックを使用
 ---
-
+バグや不具合があったら、→ https://scratch.mit.edu/users/Ika_Udon/
