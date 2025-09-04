@@ -818,7 +818,7 @@
   return {
     id: "twtextplus",
     name: "テキスト拡張(軽量)",
-    color1: "#e2284dff",
+    color1: "#e2284d",
     blocks: [
       {
         opcode: "showText",
