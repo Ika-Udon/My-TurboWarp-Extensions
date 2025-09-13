@@ -52,16 +52,9 @@ anima textとは違い、アニメーション特化ではありません。
 | `<font>` | `"フォント名"` | フォントを変更（拡張が対応しているフォント名） | `<font="Serif">セリフ体</font>` |
 | `<f_size>` | 数値(px) | 文字サイズを変更 | `<f_size=40>大きな文字</f_size>` |
 | `<space>` | 数値(px) | 文字間隔を変更（負数で詰める） | `<space=10>広め</space>` |
-| `<line_space>` | 数値(px) | 行間（縦書き時は列間）を変更 | `<line_space=20>行間広め</line_space>` |
 | `<alpha>` | 0〜100 | 透明度を変更（%） | `<alpha=50>半透明</alpha>` |
 | `<thickness>` | 数値(px) | 文字の太さ（塗りの厚み）を変更 | `<thickness=3>太文字</thickness>` |
 | `<edge>` | `c="#RRGGBB"`（色） / `t=数値`（太さ） | 縁取り色と太さを設定 | `<edge c="#0000ff" t=2>青縁</edge>` |
-| `<align>` | `left` / `center` / `right` | 文字寄せを変更 | `<align=center>中央寄せ</align>` |
-| `<vertical>` | `left` / `right` | 縦書き方向を指定 | `<vertical=right>縦書き</vertical>` |
-| `<wrap>` | 数値 | 自動改行文字数を設定（0で無効） | `<wrap=10>10文字で改行</wrap>` |
-| `<width>` | 数値(px) | テキスト幅を指定（自動改行に使用） | `<width=200>幅200px</width>` |
-| `<res>` | 0.25〜4 | 解像度倍率を変更 | `<res=2>高解像度</res>` |
-| `<aa>` | `on` / `off` | アンチエイリアスの有効/無効 | `<aa=off>ギザギザ表示</aa>` |
 
 ---
 
