@@ -1,3 +1,4 @@
+//text-draw ver. Alpha
 (function (Scratch) {
   "use strict";
   const vm = Scratch.vm;
@@ -25,6 +26,7 @@
   const DEFAULT_VERTICAL = false; // can be false | "left" | "right"
   const DEFAULT_RESOLUTION = 1;
   const DEFAULT_ANTIALIAS = true;
+  const DEFAULT_ANTIALIAS_THRESHOLD = 50;
   const DEFAULT_WRAP_CHARS = 0;
   const DEFAULT_LINE_BREAK_WIDTH = 0; // px, 改行幅（行間 / 列間）
 
@@ -66,6 +68,7 @@
       this.vertical = DEFAULT_VERTICAL; // can be false | "left" | "right"
       this.resolution = DEFAULT_RESOLUTION;
       this.antialias = DEFAULT_ANTIALIAS;
+      this.antialiasThreshold = DEFAULT_ANTIALIAS_THRESHOLD;
       this.wrapChars = DEFAULT_WRAP_CHARS;
       this.lineBreakWidth = DEFAULT_LINE_BREAK_WIDTH; // 追加: 改行幅
 
@@ -117,7 +120,7 @@
       const s = String(text);
       if (s !== this.textRaw) {
         this.textRaw = s;
-        this.textParsed = parseInline(s);
+        this.textParsed = parseInline(s, this);
         this._textDirty = true;
         this.emitWasAltered(); // 追加
       }
@@ -216,7 +219,6 @@
       n = Math.max(0.25, Math.min(4, Number(n)));
       if (n !== this.resolution) {
         this.resolution = n;
-        // 解像度もフラグメント state に含めているので再フロー
         this._textDirty = true;
         this._textureDirty = true;
         this.emitWasAltered(); // 追加
@@ -228,6 +230,14 @@
         this.antialias = on;
         this._textureDirty = true;
         this.emitWasAltered(); // 追加
+      }
+    }
+    setAntialiasThreshold(t) {
+      t = Math.max(0, Math.min(100, Number(t)));
+      if (t !== this.antialiasThreshold) {
+        this.antialiasThreshold = t;
+        this._textureDirty = true;
+        this.emitWasAltered();
       }
     }
     setWrapChars(n) {
@@ -329,7 +339,6 @@
         thickness: this.thickness,
         outlineColor: this.outlineColor,
         outlineWidth: this.outlineWidth,
-        resolution: this.resolution,
         // 追加: fontSize を fragment state に保持する
         fontSize: this.fontSize
       };
@@ -351,7 +360,6 @@
           else if (k === "thickness") curState.thickness = Number(v);
           else if (k === "outlineColor") curState.outlineColor = v;
           else if (k === "outlineWidth") curState.outlineWidth = Number(v);
-          else if (k === "resolution") curState.resolution = Number(v);
           // 追加: インラインでの文字サイズ変更を反映
           else if (k === "fontSize") curState.fontSize = Number(v);
         } else if (seg.cmd && seg.type === "n") {
@@ -598,10 +606,11 @@
       }
 
       if (!this.antialias) {
+        const threshold = (this.antialiasThreshold / 100) * 255;
         const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
         const data = imageData.data;
         for (let i = 3; i < data.length; i += 4) {
-          data[i] = data[i] < 128 ? 0 : 255;
+          data[i] = data[i] < threshold ? 0 : 255;
         }
         this.ctx.putImageData(imageData, 0, 0);
       }
@@ -684,7 +693,7 @@
 	return n;
 }
 
-  function parseInline(text) {
+  function parseInline(text, skin) {
 	const out = [];
 	let i = 0;
 	while (i < text.length) {
@@ -693,33 +702,105 @@
 			if (j === -1) { out.push({ text: text.slice(i) }); break; }
 			const raw = text.slice(i + 1, j).trim();
 			const rawLower = raw.toLowerCase();
-			if (rawLower === "/n") { out.push({ cmd: true, type: "n" }); i = j + 1; continue; }
-			// color=
-			if (rawLower.startsWith("color=")) { out.push({ cmd: true, type: "color", value: raw.split("=")[1].replace(/['"]/g, "") }); i = j + 1; continue; }
-			// font=
-			if (rawLower.startsWith("font=")) {
-				let fname = raw.split("=")[1].replace(/['"]/g, "");
-				fname = resolveFontFamily(fname);
-				out.push({ cmd: true, type: "font", value: fname });
-				i = j + 1; continue;
-			}
-			// f_size= / fsize= : インラインで文字サイズを変更
-			if (rawLower.startsWith("f_size=") || rawLower.startsWith("fsize=")) {
-				out.push({ cmd: true, type: "f_size", value: raw.split("=")[1].replace(/['"]/g, "") });
-				i = j + 1; continue;
-			}
-			if (rawLower.startsWith("space=")) { out.push({ cmd: true, type: "space", value: raw.split("=")[1].replace(/['"]/g, "") }); i = j + 1; continue; }
-			if (rawLower.startsWith("alpha=")) { out.push({ cmd: true, type: "alpha", value: raw.split("=")[1].replace(/['"]/g, "") }); i = j + 1; continue; }
-			if (rawLower.startsWith("thickness=")) { out.push({ cmd: true, type: "thickness", value: raw.split("=")[1].replace(/['"]/g, "") }); i = j + 1; continue; }
-			if (rawLower.startsWith("resolution=")) { out.push({ cmd: true, type: "resolution", value: raw.split("=")[1].replace(/['"]/g, "") }); i = j + 1; continue; }
-			if (rawLower.startsWith("edge ")) {
-				const parts = raw.split(/\s+/);
-				const e = { cmd: true, type: "edge", c: null, t: null };
-				for (const p of parts.slice(1)) {
-					if (p.startsWith("c=")) e.c = p.split("=")[1].replace(/['"]/g, "");
-					if (p.startsWith("t=")) e.t = p.split("=")[1].replace(/['"]/g, "");
+
+			// 閉じタグ </tag> または <tag> の判定
+			let isClosingTag = false;
+			let tagName = '';
+			if (rawLower.startsWith('/') && rawLower !== '/n') {
+				isClosingTag = true;
+				tagName = rawLower.substring(1);
+			} else if (!rawLower.includes('=') && rawLower !== '/n') {
+				// `/n` は改行なので除外
+				const validTagNames = ['color', 'font', 'f_size', 'fsize', 'space', 'alpha', 'thickness', 'edge'];
+				if (validTagNames.includes(rawLower)) {
+					isClosingTag = true;
+					tagName = rawLower;
 				}
-				out.push(e); i = j + 1; continue;
+			}
+
+			if (isClosingTag) {
+				let resetType = null;
+				if (tagName === 'color') resetType = 'color';
+				else if (tagName === 'font') resetType = 'font';
+				else if (tagName === 'f_size' || tagName === 'fsize') resetType = 'f_size';
+				else if (tagName === 'space') resetType = 'space';
+				else if (tagName === 'alpha') resetType = 'alpha';
+				else if (tagName === 'thickness') resetType = 'thickness';
+				else if (tagName === 'edge') resetType = 'edge';
+				
+				if (resetType) {
+					out.push({ cmd: true, type: 'reset', value: resetType });
+					i = j + 1;
+					continue;
+				}
+			}
+
+			if (rawLower === "/n") { out.push({ cmd: true, type: "n" }); i = j + 1; continue; }
+
+			// New: Multi-attribute parsing logic
+			const attributeRegex = /([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g;
+			let match;
+			let attributesProcessed = false;
+
+			while ((match = attributeRegex.exec(raw)) !== null) {
+				attributesProcessed = true;
+				const key = match[1].toLowerCase();
+				const value = match[2] || match[3] || match[4] || '';
+
+				if (key === 'color') {
+					if (value.toLowerCase() === 'default') {
+						out.push({ cmd: true, type: 'reset', value: 'color' });
+					} else {
+						out.push({ cmd: true, type: "color", value: value });
+					}
+				} else if (key === 'font') {
+					if (value.toLowerCase() === 'default') {
+						out.push({ cmd: true, type: 'reset', value: 'font' });
+					} else {
+						const fname = resolveFontFamily(value);
+						out.push({ cmd: true, type: "font", value: fname });
+					}
+				} else if (key === 'f_size' || key === 'fsize') {
+					if (value.toLowerCase() === 'default') {
+						out.push({ cmd: true, type: 'reset', value: 'f_size' });
+					} else {
+						out.push({ cmd: true, type: "f_size", value: value });
+					}
+				} else if (key === 'space') {
+					if (value.toLowerCase() === 'default') {
+						out.push({ cmd: true, type: 'reset', value: 'space' });
+					} else {
+						out.push({ cmd: true, type: "space", value: value });
+					}
+				} else if (key === 'alpha') {
+					if (value.toLowerCase() === 'default') {
+						out.push({ cmd: true, type: 'reset', value: 'alpha' });
+					} else {
+						out.push({ cmd: true, type: "alpha", value: value });
+					}
+				} else if (key === 'thickness') {
+					if (value.toLowerCase() === 'default') {
+						out.push({ cmd: true, type: 'reset', value: 'thickness' });
+					} else {
+						out.push({ cmd: true, type: "thickness", value: value });
+					}
+				} else if (key === 'c') { // for edge color
+					if (value.toLowerCase() === 'default') {
+						out.push({ cmd: true, type: 'reset', value: 'outlineColor' });
+					} else {
+						out.push({ cmd: true, type: 'edge', c: value, t: null });
+					}
+				} else if (key === 't') { // for edge thickness
+					if (value.toLowerCase() === 'default') {
+						out.push({ cmd: true, type: 'reset', value: 'outlineWidth' });
+					} else {
+						out.push({ cmd: true, type: 'edge', c: null, t: value });
+					}
+				}
+			}
+
+			if (attributesProcessed) {
+				i = j + 1; continue;
 			}
 			out.push({ text: text.slice(i, j + 1) }); i = j + 1; continue;
 		} else {
@@ -729,30 +810,56 @@
 		}
 	}
 	const applied = [];
-	let color = DEFAULT_COLOR;
-	let alpha = DEFAULT_ALPHA;
-	let font = DEFAULT_FONT;
-	let spacing = DEFAULT_SPACING;
-	let thickness = DEFAULT_THICKNESS;
-	let outlineColor = DEFAULT_OUTLINE_COLOR;
-	let outlineWidth = DEFAULT_OUTLINE_WIDTH;
-	let resolution = DEFAULT_RESOLUTION;
-	let lineBreakWidth = DEFAULT_LINE_BREAK_WIDTH; // keep global block setter, but inline token removed
+
+	const defaultColor = skin ? skin.color : DEFAULT_COLOR;
+	const defaultAlpha = skin ? skin.alpha : DEFAULT_ALPHA;
+	const defaultFont = skin ? skin.fontFamily : DEFAULT_FONT;
+	const defaultSpacing = skin ? skin.spacing : DEFAULT_SPACING;
+	const defaultThickness = skin ? skin.thickness : DEFAULT_THICKNESS;
+	const defaultOutlineColor = skin ? skin.outlineColor : DEFAULT_OUTLINE_COLOR;
+	const defaultOutlineWidth = skin ? skin.outlineWidth : DEFAULT_OUTLINE_WIDTH;
+	const defaultFontSize = skin ? skin.fontSize : DEFAULT_FONT_SIZE;
+
+	let color = defaultColor;
+	let alpha = defaultAlpha;
+	let font = defaultFont;
+	let spacing = defaultSpacing;
+	let thickness = defaultThickness;
+	let outlineColor = defaultOutlineColor;
+	let outlineWidth = defaultOutlineWidth;
+	let fontSize = defaultFontSize;
 
 	for (const seg of out) {
 		if (seg.text != null) {
 			applied.push({ cmd: true, type: "text", value: seg.text });
 		} else if (seg.cmd) {
+			if (seg.type === 'reset') {
+				const resetType = seg.value;
+				if (resetType === 'color') { color = defaultColor; applied.push({ cmd: true, type: "state", key: "color", value: color }); }
+				else if (resetType === 'font') { font = defaultFont; applied.push({ cmd: true, type: "state", key: "font", value: font }); }
+				else if (resetType === 'f_size') { fontSize = defaultFontSize; applied.push({ cmd: true, type: "state", key: "fontSize", value: fontSize }); }
+				else if (resetType === 'space') { spacing = defaultSpacing; applied.push({ cmd: true, type: "state", key: "spacing", value: spacing }); }
+				else if (resetType === 'alpha') { alpha = defaultAlpha; applied.push({ cmd: true, type: "state", key: "alpha", value: alpha }); }
+				else if (resetType === 'thickness') { thickness = defaultThickness; applied.push({ cmd: true, type: "state", key: "thickness", value: thickness }); }
+				else if (resetType === 'edge') {
+					outlineColor = defaultOutlineColor; applied.push({ cmd: true, type: "state", key: "outlineColor", value: outlineColor });
+					outlineWidth = defaultOutlineWidth; applied.push({ cmd: true, type: "state", key: "outlineWidth", value: outlineWidth });
+				}
+				else if (resetType === 'outlineColor') {
+					outlineColor = defaultOutlineColor; applied.push({ cmd: true, type: "state", key: "outlineColor", value: outlineColor });
+				}
+				else if (resetType === 'outlineWidth') {
+					outlineWidth = defaultOutlineWidth; applied.push({ cmd: true, type: "state", key: "outlineWidth", value: outlineWidth });
+				}
+			}
 			if (seg.type === "color") { color = seg.value; applied.push({ cmd: true, type: "state", key: "color", value: color }); }
 			else if (seg.type === "alpha") { alpha = Number(seg.value); applied.push({ cmd: true, type: "state", key: "alpha", value: alpha }); }
 			else if (seg.type === "font") { font = seg.value; applied.push({ cmd: true, type: "state", key: "font", value: font }); }
 			else if (seg.type === "space") { spacing = Number(seg.value); applied.push({ cmd: true, type: "state", key: "spacing", value: spacing }); }
 			else if (seg.type === "thickness") { thickness = Number(seg.value); applied.push({ cmd: true, type: "state", key: "thickness", value: thickness }); }
-			else if (seg.type === "resolution") { resolution = Number(seg.value); applied.push({ cmd: true, type: "state", key: "resolution", value: resolution }); }
 			else if (seg.type === "f_size") { 
 				const fs = Number(seg.value);
-				font = font; // keep
-				applied.push({ cmd: true, type: "state", key: "fontSize", value: fs }); 
+				fontSize = fs; applied.push({ cmd: true, type: "state", key: "fontSize", value: fs }); 
 			}
 			else if (seg.type === "edge") {
 				if (seg.c) { outlineColor = seg.c; applied.push({ cmd: true, type: "state", key: "outlineColor", value: outlineColor }); }
@@ -798,6 +905,7 @@
           b.setVertical(a.vertical);
           b.setResolution(a.resolution);
           b.setAntialias(a.antialias);
+          b.setAntialiasThreshold(a.antialiasThreshold);
           b.setWrapChars(a.wrapChars);
           b.setTextWidth(a.textWidth);
           b.setText(a.textRaw);
@@ -818,7 +926,7 @@
   return {
     id: "twtextplus",
     name: "テキスト拡張(軽量)",
-    color1: "#e2284d",
+    color1: "#e2284dff",
     blocks: [
       {
         opcode: "showText",
@@ -921,6 +1029,14 @@
         },
       },
       {
+        opcode: "setAntiAliasThreshold",
+        blockType: Scratch.BlockType.COMMAND,
+        text: "アンチエイリアスの閾値を [THRESHOLD] にする",
+        arguments: {
+          THRESHOLD: { type: Scratch.ArgumentType.NUMBER, defaultValue: 50 }
+        },
+      },
+      {
         opcode: "setWrapChars",
         blockType: Scratch.BlockType.COMMAND,
         text: "改行までの文字数を [N] にする (0は無効)",
@@ -975,7 +1091,7 @@
       attribute: {
         acceptReporters: true,
         items: [
-          "font", "size", "color", "alpha", "spacing", "align", "thickness", "edge color", "edge width", "vertical", "resolution", "antialias", "width", "text"
+          "font", "size", "color", "alpha", "spacing", "align", "thickness", "edge color", "edge width", "vertical", "resolution", "antialias", "antialias threshold", "width", "text"
         ]
       }
     }
@@ -1114,6 +1230,11 @@ setAntiAlias({ ON }, util) {
     state.skin.setAntialias(ON === "true");
 }
 
+    setAntiAliasThreshold({ THRESHOLD }, util) {
+      const state = this._getState(util.target);
+      state.skin.setAntialiasThreshold(Scratch.Cast.toNumber(THRESHOLD));
+    }
+
     setWrapChars({ N }, util) {
       const state = this._getState(util.target);
       state.skin.setWrapChars(Scratch.Cast.toNumber(N));
@@ -1139,6 +1260,7 @@ setAntiAlias({ ON }, util) {
       if (k === "vertical") return state.skin.vertical;
       if (k === "resolution") return state.skin.resolution;
       if (k === "antialias") return state.skin.antialias;
+      if (k === "antialias threshold") return state.skin.antialiasThreshold;
       if (k === "width") return state.skin.textWidth;
       if (k === "lineBreakWidth") return state.skin.lineBreakWidth;
       if (k === "text") return state.skin.textRaw;
